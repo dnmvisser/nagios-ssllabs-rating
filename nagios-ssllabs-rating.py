@@ -10,6 +10,13 @@ import json
 from packaging import version
 
 
+from pprint import pprint
+import logging
+logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s %(message)s',
+        filename='/tmp/ssllabs.log'
+        )
 
 def nagios_exit(message, code):
     print(message)
@@ -17,7 +24,7 @@ def nagios_exit(message, code):
 
 def report(host, grade, cached=False, ca=0, ma=0):
     cached_msg = " (locally cached result, could be stale)" if cached else ""
-    msg = ("SSLlabs rating for " + host + " is " + grade + cached_msg +
+    msg = ("SSL Labs rating is " + grade + cached_msg +
         "\nSee https://www.ssllabs.com/ssltest/analyze.html?d=" + host + 
         "\nCurrently using " + str(ca) + " concurrent assessments (max " + str(ma) + ")")
     if version.parse(args.critical) <= version.parse(grade):
@@ -62,15 +69,12 @@ try:
    
     args = parser.parse_args()
  
-    if args.verbose > 0:
-        from pprint import pprint
-        import logging
-        logging.basicConfig(level=logging.DEBUG)
 
     # start with clean slate
     ok_msg = []
     warn_msg = []
     crit_msg = []
+
 
     # Caching location
     cache_file = args.tempdir + "/ssllabs_check_" + hashlib.sha256(args.host.encode('utf-8')).hexdigest() + ".json"
@@ -78,6 +82,7 @@ try:
     api = "https://api.ssllabs.com/api/v3/"
     # Fetch API information for this IP address
     api_status = requests.get(api + "info")
+    logging.debug(api_status)
     current_assessments = api_status.json()["currentAssessments"]
     max_assessments = api_status.json()["maxAssessments"]
 
@@ -108,27 +113,31 @@ try:
                 }
         polling.poll(
                 lambda: requests.get(api + "analyze?", params=params).json()["status"] == "READY",
-                step=2,
+                step=5,
                 poll_forever=True,
                 )
+
         analyze_req = requests.get(api + "analyze?", params=params)
-        results = analyze_req.json()
-        if args.verbose > 0:
-            pprint(results)
+        if analyze_req.status_code == 200:
+            results = analyze_req.json()
+            if args.verbose > 0:
+                pprint(results)
 
 
-        # Store results
-        if args.verbose > 0:
-            print("Storing results as " + cache_file)
-        with open(cache_file, "w") as fp:
-            json.dump(results, fp)
-        
-        # Report status
-        # FIXME we only look at the first endpoint (the IPv4 one).
-        # We should take the grades of all endpoints into account (how?)
-        report(args.host, results["endpoints"][0]["grade"], False, current_assessments, max_assessments)
+            # Store results
+            if args.verbose > 0:
+                print("Storing results as " + cache_file)
+            with open(cache_file, "w") as fp:
+                json.dump(results, fp)
+            
+            # Report status
+            # FIXME we only look at the first endpoint (the IPv4 one).
+            # We should take the grades of all endpoints into account (how?)
+            report(args.host, results["endpoints"][0]["grade"], False, current_assessments, max_assessments)
 
-        
+        else:
+            warn_msg.append("Too many concurrent assessments, or some other error")
+            logging.debug(analyze_req.headers)
 
 
 except Exception as e:
