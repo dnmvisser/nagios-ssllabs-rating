@@ -24,18 +24,22 @@ def nagios_exit(message, code):
 
 def report(results):
     if 'endpoints' in results:
-        # Find the worst grade, and report that
-        grades = [ sub['grade'] for sub in results['endpoints'] if 'grade' in sub]
-        grade = sorted(grades, key=lambda x: version.parse(x))[-1]
-        msg = ("SSLLabs rating is " + grade + 
-            "\nSee https://www.ssllabs.com/ssltest/analyze.html?d=" + results['host']) 
-        if(len(grades) > 0):
+        # All endpoints are 'Ready' => report grade among all endpoints
+        if all('Ready' in e["statusMessage"] for e in results["endpoints"]):
+            grades = [ sub['grade'] for sub in results['endpoints'] if 'grade' in sub]
+            grade = sorted(grades, key=lambda x: version.parse(x))[-1]
+            msg = ("SSLLabs rating is " + grade + 
+                "\nSee https://www.ssllabs.com/ssltest/analyze.html?d=" )
             if version.parse(args.critical) <= version.parse(grade):
                 crit_msg.append(msg)
             elif version.parse(args.warning) <= version.parse(grade):
                 warn_msg.append(msg)
             else:
                 ok_msg.append(msg)
+        else:
+            # Something strange happened (DNS resolution errors, unable to connect, etc) = Failure
+            status = ', '.join(list(set([sub["statusMessage"] for sub in results["endpoints"] if sub["statusMessage"] != "Ready"])))
+            crit_msg.append(status + "\n" + str(results["endpoints"]))
 
     else:
         crit_msg.append(results['statusMessage'])
@@ -91,8 +95,8 @@ try:
     current_assessments = api_status.json()["currentAssessments"]
     max_assessments = api_status.json()["maxAssessments"]
 
-    if current_assessments >= max_assessments:
-    # if args.verbose > 2:
+    #if current_assessments >= max_assessments:
+    if args.verbose > 2:
         if args.verbose > 0:
             print("We have reached the maximum number of outstanding assessments of the SSL Labs API (" +
                     str(max_assessments) + "). Trying cached results from " + cache_file)
@@ -120,30 +124,22 @@ try:
                 )
 
         analyze_req = requests.get(api + "analyze?", params=params)
+
         if analyze_req.status_code == 200:
             results = analyze_req.json()
             if args.verbose > 0:
                 pprint(results)
-            if "endpoints" in results:
-                # Store results
-                with open(cache_file, "w") as fp:
-                    json.dump(results, fp)
-
-                if all('Ready' in e["statusMessage"] for e in results["endpoints"]):
-                    # All endpoints are 'Ready' => report worst status among all endpoints
-                    report(results)
-                else:
-                    # Something strange happened (DNS resolution errors, unable to connect, etc) = Failure
-                    status = ', '.join(list(set([sub["statusMessage"] for sub in results["endpoints"] if sub["statusMessage"] != "Ready"])))
-                    crit_msg.append(status + "\n" + str(results["endpoints"]))
-            else:
-                # No endpoints at all - some error (DNS?)
-                crit_msg.append(results['statusMessage'])
+            # Store results
+            with open(cache_file, "w") as fp:
+                json.dump(results, fp)
+            # Report results
+            report(results)
         else:
             # https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs-v3.md#error-response-status-codes
             # FIXME This should never happen, but we should be able to handle it
-            warn_msg.append("Too many concurrent assessments, or some other error")
-            logging.debug(analyze_req.headers)
+            crit_msg.append("Error communicating with API" + 
+                    "See https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs-v3.md#error-response-status-codes" +
+                    "Response headers: " + str(analyze_req.headers))
 
 
 except Exception as e:
