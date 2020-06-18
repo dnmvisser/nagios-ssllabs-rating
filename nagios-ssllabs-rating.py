@@ -3,7 +3,7 @@ import argparse
 import sys
 import os
 import requests
-import polling
+import time
 import tempfile
 import hashlib
 import json
@@ -130,16 +130,17 @@ try:
                 "fromCache": "on",
                 # "all": "on",
                 }
-        polling.poll(
-                lambda: requests.get(api + "analyze?", params=params).json()["status"] in ["READY", "ERROR"],
-                step=5,
-                poll_forever=True,
-                )
 
-        analyze_req = requests.get(api + "analyze?", params=params)
+        # Poll the API
+        while True:
+            response = requests.get(api + "analyze?", params=params)
+            if response.json()['status'] in ['READY', 'ERROR']:
+                break
+            time.sleep(5)
 
-        if analyze_req.status_code == 200:
-            results = analyze_req.json()
+
+        if response.status_code == 200:
+            results = response.json()
 #            if args.verbose > 0:
 #                pprint(results)
             # Store results
