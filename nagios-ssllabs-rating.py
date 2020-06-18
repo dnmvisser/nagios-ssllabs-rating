@@ -2,8 +2,8 @@
 import argparse
 import sys
 import os
-import requests
 import time
+import requests
 import tempfile
 import hashlib
 import json
