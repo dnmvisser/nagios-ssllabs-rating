@@ -22,18 +22,23 @@ def nagios_exit(message, code):
     print(message)
     sys.exit(code)
 
-def report(host, grade, cached=False, ca=0, ma=0):
-    cached_msg = " (locally cached result, could be stale)" if cached else ""
-    msg = ("SSL Labs rating is " + grade + cached_msg +
-        "\nSee https://www.ssllabs.com/ssltest/analyze.html?d=" + host + 
-        "\nCurrently using " + str(ca) + " concurrent assessments (max " + str(ma) + ")")
-    if version.parse(args.critical) <= version.parse(grade):
-        crit_msg.append(msg)
-    elif version.parse(args.warning) <= version.parse(grade):
-        warn_msg.append(msg)
+def report(results):
+    if 'endpoints' in results:
+        # Find the worst grade, and report that
+        grades = [ sub['grade'] for sub in results['endpoints'] if 'grade' in sub]
+        grade = sorted(grades, key=lambda x: version.parse(x))[-1]
+        msg = ("SSLLabs rating is " + grade + 
+            "\nSee https://www.ssllabs.com/ssltest/analyze.html?d=" + results['host']) 
+        if(len(grades) > 0):
+            if version.parse(args.critical) <= version.parse(grade):
+                crit_msg.append(msg)
+            elif version.parse(args.warning) <= version.parse(grade):
+                warn_msg.append(msg)
+            else:
+                ok_msg.append(msg)
+
     else:
-        ok_msg.append(msg)
-    
+        crit_msg.append(results['statusMessage'])
 
 
 try:
@@ -94,10 +99,7 @@ try:
         if os.path.exists(cache_file):
             with open(cache_file) as cached_results:
                 results = json.load(cached_results)
-                # Report status
-                # FIXME we only look at the first endpoint (the IPv4 one).
-                # We should take the grades of all endpoints into account (how?)
-                report(args.host, results["endpoints"][0]["grade"], True, current_assessments, max_assessments)
+                report(results)
         else:
             crit_msg.append("Maximum number of concurrent assessments reached, and no cached results were found for " +
                     args.host)
@@ -122,25 +124,24 @@ try:
             results = analyze_req.json()
             if args.verbose > 0:
                 pprint(results)
-                # Store results
-                print("Storing results as " + cache_file)
             if "endpoints" in results:
+                # Store results
                 with open(cache_file, "w") as fp:
                     json.dump(results, fp)
 
                 if all('Ready' in e["statusMessage"] for e in results["endpoints"]):
-                    # All endpoints are 'Ready' => report status
-                    report(args.host, results["endpoints"][0]["grade"], False, current_assessments, max_assessments)
+                    # All endpoints are 'Ready' => report worst status among all endpoints
+                    report(results)
                 else:
                     # Something strange happened (DNS resolution errors, unable to connect, etc) = Failure
                     status = ', '.join(list(set([sub["statusMessage"] for sub in results["endpoints"] if sub["statusMessage"] != "Ready"])))
                     crit_msg.append(status + "\n" + str(results["endpoints"]))
             else:
-                # No results - some error
+                # No endpoints at all - some error (DNS?)
                 crit_msg.append(results['statusMessage'])
         else:
             # https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs-v3.md#error-response-status-codes
-            # FIXME handle this exception more gracefully
+            # FIXME This should never happen, but we should be able to handle it
             warn_msg.append("Too many concurrent assessments, or some other error")
             logging.debug(analyze_req.headers)
 
