@@ -112,7 +112,7 @@ try:
                 # "all": "on",
                 }
         polling.poll(
-                lambda: requests.get(api + "analyze?", params=params).json()["status"] == "READY",
+                lambda: requests.get(api + "analyze?", params=params).json()["status"] in ["READY", "ERROR"],
                 step=5,
                 poll_forever=True,
                 )
@@ -122,19 +122,22 @@ try:
             results = analyze_req.json()
             if args.verbose > 0:
                 pprint(results)
-
-
-            # Store results
-            if args.verbose > 0:
+                # Store results
                 print("Storing results as " + cache_file)
-            with open(cache_file, "w") as fp:
-                json.dump(results, fp)
-            
-            # Report status
-            # FIXME we only look at the first endpoint (the IPv4 one).
-            # We should take the grades of all endpoints into account (how?)
-            report(args.host, results["endpoints"][0]["grade"], False, current_assessments, max_assessments)
+            if "endpoints" in results:
+                with open(cache_file, "w") as fp:
+                    json.dump(results, fp)
 
+                if all('Ready' in e["statusMessage"] for e in results["endpoints"]):
+                    # All endpoints are 'Ready' => report status
+                    report(args.host, results["endpoints"][0]["grade"], False, current_assessments, max_assessments)
+                else:
+                    # Something strange happened (DNS resolution errors, unable to connect, etc) = Failure
+                    status = ', '.join(list(set([sub["statusMessage"] for sub in results["endpoints"] if sub["statusMessage"] != "Ready"])))
+                    crit_msg.append(status + "\n" + str(results["endpoints"]))
+            else:
+                # No results - some error
+                crit_msg.append(results['statusMessage'])
         else:
             warn_msg.append("Too many concurrent assessments, or some other error")
             logging.debug(analyze_req.headers)
