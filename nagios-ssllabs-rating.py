@@ -139,6 +139,8 @@ try:
                 # No results - some error
                 crit_msg.append(results['statusMessage'])
         else:
+            # https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs-v3.md#error-response-status-codes
+            # FIXME handle this exception more gracefully
             warn_msg.append("Too many concurrent assessments, or some other error")
             logging.debug(analyze_req.headers)
 
