@@ -38,9 +38,7 @@ def report(results):
         if all('Ready' in e["statusMessage"] for e in results["endpoints"]):
             grades = [ sub['grade'] for sub in results['endpoints'] if 'grade' in sub]
             grade = sorted(grades, key=lambda x: version.parse(x))[-1]
-            msg = "SSLLabs rating is " + grade + info_line 
-            if args.verbose > 0:
-                msg += debug_info
+            msg = "SSLLabs rating is " + grade + info_line + debug_info
             if version.parse(args.critical) <= version.parse(grade):
                 crit_msg.append(msg)
             elif version.parse(args.warning) <= version.parse(grade):
@@ -50,15 +48,11 @@ def report(results):
         else:
             # Something strange happened (unable to connect, etc) = Failure
             msg = ', '.join(list(set([sub["statusMessage"] for sub in results["endpoints"] if sub["statusMessage"] != "Ready"])))
-            if args.verbose > 0:
-                msg += debug_info
             crit_msg.append(msg)
     else:
         # No endpoints - usually the results of isssues that prevent the tests
         # from running at all (like DNS resolution failures)
-        msg = results['statusMessage'] + info_line
-        if args.verbose > 0:
-            msg += debug_info
+        msg = results['statusMessage'] + info_line + debug_info
         crit_msg.append(msg)
 
 
@@ -86,11 +80,11 @@ try:
             help='Directory to store cache files (default on this system: ' + tempdir + ')',
             default=tempdir
             )
-    parser.add_argument('--verbose', '-v',
-            help='Show verbose output',
-            action='count',
-            default=0
-            )
+    # parser.add_argument('--verbose', '-v',
+    #         help='Show verbose output',
+    #         action='count',
+    #         default=0
+    #         )
 
    
     args = parser.parse_args()
