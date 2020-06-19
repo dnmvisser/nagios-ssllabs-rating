@@ -132,6 +132,8 @@ try:
         # Poll the API
         while True:
             response = requests.get(api + "analyze?", params=params)
+            if response.status_code != 200:
+                break
             if response.json()['status'] in ['READY', 'ERROR']:
                 break
             time.sleep(5)
@@ -149,9 +151,9 @@ try:
         else:
             # https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs-v3.md#error-response-status-codes
             # FIXME This should never happen, but we should be able to handle it
-            debug_info = "\n\nAPI HTTP response headers:\n\n" + yaml.dump(response.headers, default_flow_style=False)
-            crit_msg.append("Error communicating with API" + 
-                    "See https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs-v3.md#error-response-status-codes" +
+            debug_info = "\n\nHTTP response headers:\n\n" + yaml.dump(response.headers, default_flow_style=False)
+            crit_msg.append("Received HTTP " + str(response.status_code) + " from SSL Labs API" +
+                    "\nSee https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs-v3.md#error-response-status-codes" +
                     debug_info)
 
 
