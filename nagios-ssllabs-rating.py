@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
+
+# These come standard
 import argparse
 import sys
 import os
 import time
-import requests
 import tempfile
 import hashlib
 import json
+
+# These can be installed through apt/yum
+import requests
 import yaml
 from packaging import version
 
@@ -30,7 +34,7 @@ def report(results):
     info_line = "\nSee https://www.ssllabs.com/ssltest/analyze.html?d=" + results['host']
     debug_info = "\n\nAPI result:\n\n" + yaml.dump(results, default_flow_style=False)
     if 'endpoints' in results:
-        # All endpoints are 'Ready' => report grade among all endpoints
+        # All endpoints are 'Ready' => report the worst grade across them
         if all('Ready' in e["statusMessage"] for e in results["endpoints"]):
             grades = [ sub['grade'] for sub in results['endpoints'] if 'grade' in sub]
             grade = sorted(grades, key=lambda x: version.parse(x))[-1]
@@ -151,9 +155,10 @@ try:
         else:
             # https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs-v3.md#error-response-status-codes
             # FIXME This should never happen, but we should be able to handle it
+            debug_info = "\n\nAPI HTTP response headers:\n\n" + yaml.dump(response.headers, default_flow_style=False)
             crit_msg.append("Error communicating with API" + 
                     "See https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs-v3.md#error-response-status-codes" +
-                    "Response headers: " + str(analyze_req.headers))
+                    debug_info)
 
 
 except Exception as e:
