@@ -80,11 +80,6 @@ try:
             help='Directory to store cache files (default on this system: ' + tempdir + ')',
             default=tempdir
             )
-    # parser.add_argument('--verbose', '-v',
-    #         help='Show verbose output',
-    #         action='count',
-    #         default=0
-    #         )
 
    
     args = parser.parse_args()
@@ -95,6 +90,9 @@ try:
     warn_msg = []
     crit_msg = []
 
+    # Ensure tempdir exists
+    from pathlib import Path
+    Path(args.tempdir).mkdir(parents=True, exist_ok=True)
 
     # Caching location
     cache_file = args.tempdir + "/ssllabs_check_" + hashlib.sha256(args.host.encode('utf-8')).hexdigest() + ".json"
