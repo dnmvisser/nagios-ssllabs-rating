@@ -19,12 +19,12 @@ from packaging import version
 
 
 # TEMP logging... 
-import logging
-logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s %(message)s',
-        filename='/tmp/ssllabs.log'
-        )
+# import logging
+# logging.basicConfig(
+#         level=logging.DEBUG,
+#         format='%(asctime)s %(message)s',
+#         filename='/tmp/ssllabs.log'
+#         )
 
 def nagios_exit(message, code):
     print(message)
@@ -50,7 +50,7 @@ def report(results):
             msg = ', '.join(list(set([sub["statusMessage"] for sub in results["endpoints"] if sub["statusMessage"] != "Ready"])))
             crit_msg.append(msg)
     else:
-        # No endpoints - usually the results of isssues that prevent the tests
+        # No endpoints - usually the result of issues that prevent the tests
         # from running at all (like DNS resolution failures)
         msg = results['statusMessage'] + info_line + debug_info
         crit_msg.append(msg)
