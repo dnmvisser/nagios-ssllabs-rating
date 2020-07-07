@@ -14,7 +14,8 @@ through the standard package manager:
 
 # Features
 
-* Uses the SSL Labs API
+* Uses the [SSL Labs v3
+  API](https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs-v3.md)
 * Configurable warning/critical thresholds (default B and C)
 * Caches results
 
@@ -46,7 +47,7 @@ The rest of the output is extra information, meant for nagios as
 Default usage:
 
 ```
-vagrant@xenial:~$ ./nagios-ssllabs-rating.py  --host wiki.geant.org
+~$ ./nagios-ssllabs-rating.py --host wiki.geant.org
 OK: SSLLabs rating is A
 See https://www.ssllabs.com/ssltest/analyze.html?d=wiki.geant.org
 
@@ -87,7 +88,7 @@ testTime: 1594136547059
 To get notified earlier, you can use lower thresholds ratings. For instance:
 
 ```
-vagrant@xenial:~$ ./nagios-ssllabs-rating.py  --host wiki.geant.org --warning A --critical B
+~$ ./nagios-ssllabs-rating.py --host wiki.geant.org --warning A --critical B
 WARNING: SSLLabs rating is A
 See https://www.ssllabs.com/ssltest/analyze.html?d=wiki.geant.org
 
