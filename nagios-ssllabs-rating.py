@@ -100,7 +100,7 @@ try:
     api = "https://api.ssllabs.com/api/v3/"
     # Fetch API information for this IP address
     api_status = requests.get(api + "info")
-    logging.debug(api_status)
+    # logging.debug(api_status)
     current_assessments = api_status.json()["currentAssessments"]
     max_assessments = api_status.json()["maxAssessments"]
 
