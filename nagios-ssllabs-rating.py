@@ -34,23 +34,36 @@ def report(results):
     info_line = "\nSee https://www.ssllabs.com/ssltest/analyze.html?d=" + results['host']
     debug_info = "\n\nAPI result:\n\n" + yaml.dump(results, default_flow_style=False)
     if 'endpoints' in results:
-        # Create list of statuses
-        statuses = [ sub["statusMessage"] for sub in results["endpoints"]]
+
+        # Create list of unique statuses across all reported endpoints
+        statuses = list(set([ sub["statusMessage"] for sub in results["endpoints"]]))
+
+        # At least one endpoint is 'Ready' => report the worst grade across all of them
         if 'Ready' in statuses:
-            # At least one endpoint is 'Ready' => report the worst grade across all of them
-            grades = [ sub['grade'] for sub in results['endpoints'] if 'grade' in sub]
+
+            # List of unique grades
+            grades = list(set([ sub['grade'] for sub in results['endpoints'] if 'grade' in sub]))
             grade = sorted(grades, key=lambda x: version.parse(x))[-1]
-            msg = "SSLLabs rating is " + grade + info_line + debug_info
+
+            # Endpoint inconsistency message
+            if (len(statuses) > 1) or (len(grades) > 1):
+                inconsistency_msg = " (but inconsistent across " + str(len(results['endpoints'])) + " endpoints)"
+            else:
+                inconsistency_msg = ""
+
+            msg = "SSLLabs rating is " + grade + inconsistency_msg +  info_line + debug_info
+
             if version.parse(args.critical) <= version.parse(grade):
                 crit_msg.append(msg)
             elif version.parse(args.warning) <= version.parse(grade):
                 warn_msg.append(msg)
             else:
                 ok_msg.append(msg)
+
+        # None of the endpoints is 'Ready'. This usually happens when all of the
+        # host's IP addresses are inaccessible (firewall/ACLs/etc).
         else:
-            # None of the endpoints is 'Ready'. This usually happens when all of the
-            # host's IP addresses are inaccessible (firewall/ACLs/etc).
-            msg = "SSL Labs rating failed with: " + (', '.join(list(set(statuses)))) + info_line + debug_info
+            msg = "SSL Labs rating failed with: " + (', '.join(statuses)) + info_line + debug_info
             crit_msg.append(msg)
     else:
         # No endpoints - usually the result of issues that prevent the tests

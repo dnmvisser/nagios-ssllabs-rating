@@ -56,7 +56,7 @@ API result:
 criteriaVersion: 2009q
 endpoints:
 - delegation: 1
-  duration: 79614
+  duration: 80026
   grade: A
   gradeTrustIgnored: A
   hasWarnings: false
@@ -66,7 +66,7 @@ endpoints:
   serverName: prod-haproxy.geant.org
   statusMessage: Ready
 - delegation: 1
-  duration: 84891
+  duration: 80528
   grade: A
   gradeTrustIgnored: A
   hasWarnings: false
@@ -80,10 +80,11 @@ host: wiki.geant.org
 isPublic: false
 port: 443
 protocol: http
-startTime: 1594136381900
+startTime: 1594723358496
 status: READY
-testTime: 1594136547059
+testTime: 1594723519403
 ```
+
 
 To get notified earlier, you can use lower thresholds ratings. For instance:
 
@@ -97,7 +98,7 @@ API result:
 criteriaVersion: 2009q
 endpoints:
 - delegation: 1
-  duration: 79614
+  duration: 80026
   grade: A
   gradeTrustIgnored: A
   hasWarnings: false
@@ -107,7 +108,7 @@ endpoints:
   serverName: prod-haproxy.geant.org
   statusMessage: Ready
 - delegation: 1
-  duration: 84891
+  duration: 80528
   grade: A
   gradeTrustIgnored: A
   hasWarnings: false
@@ -121,16 +122,21 @@ host: wiki.geant.org
 isPublic: false
 port: 443
 protocol: http
-startTime: 1594136381900
+startTime: 1594723358496
 status: READY
-testTime: 1594136547059
+testTime: 1594723519403
 ```
 
 
 # Tips/gotchas
 
+* For FQDNs that have multiple endpoints (dual stack hosts etc), the plugin
+reports the _worst_ score of the endpoints that _have_ a score. Endpoints
+_without_ a score (like unreachable endpoints) are ignored when there are also
+endpoints _with_ a score. The rationale is that this prevents common connectivity
+problems from polluting the results of this plugin (which is about the score).
+When there are _no_ endpoints at all, this _is_ reported however (as CRITICAL).
 * Starting up many probes at __exactly__ the same time will result in API
 throttling. Don't do that.
 * For use as a Nagios plugin, you can set the `tempdir` to something like `/var/cache/nagios3`,
   `/var/lib/nagios4/check_ssllabs/`, etc.
-
