@@ -34,8 +34,10 @@ def report(results):
     info_line = "\nSee https://www.ssllabs.com/ssltest/analyze.html?d=" + results['host']
     debug_info = "\n\nAPI result:\n\n" + yaml.dump(results, default_flow_style=False)
     if 'endpoints' in results:
-        # At least one endpoint is 'Ready' => report the worst grade across all of them
-        if any('Ready' in e["statusMessage"] for e in results["endpoints"]):
+        # Create list of statuses
+        statuses = [ sub["statusMessage"] for sub in results["endpoints"]]
+        if 'Ready' in statuses:
+            # At least one endpoint is 'Ready' => report the worst grade across all of them
             grades = [ sub['grade'] for sub in results['endpoints'] if 'grade' in sub]
             grade = sorted(grades, key=lambda x: version.parse(x))[-1]
             msg = "SSLLabs rating is " + grade + info_line + debug_info
@@ -46,10 +48,9 @@ def report(results):
             else:
                 ok_msg.append(msg)
         else:
-            # None of the endpoints is 'Ready' (unable to connect at any IP address, etc)
-            msg = "SSL Labs rating failed: " +
-                ', '.join(list(set([sub["statusMessage"] for sub in results["endpoints"]]))) +
-                info_line + debug_info
+            # None of the endpoints is 'Ready'. This usually happens when all of the
+            # host's IP addresses are inaccessible (firewall/ACLs/etc).
+            msg = "SSL Labs rating failed with: " + (', '.join(list(set(statuses)))) + info_line + debug_info
             crit_msg.append(msg)
     else:
         # No endpoints - usually the result of issues that prevent the tests
