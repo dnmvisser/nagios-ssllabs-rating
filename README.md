@@ -135,7 +135,18 @@ reports the _worst_ score of the endpoints that _have_ a score. Endpoints
 _without_ a score (like unreachable endpoints) are ignored when there are also
 endpoints _with_ a score. The rationale is that this prevents common connectivity
 problems from polluting the results of this plugin (which is about the score).
-When there are _no_ endpoints at all, this _is_ reported however (as CRITICAL).
+When there are _no_ endpoints at all, this _is_ reported however (as CRITICAL):
+
+| Endpoints                                                                                            | Rating   | Reported result                                                |
+|------------------------------------------------------------------------------------------------------|----------|----------------------------------------------------------------|
+| - grade: A<br>- grade: A                                                                             | OK       | `SSL Labs rating is A`                                         |
+| - grade: A<br>- grade: B                                                                             | WARNING  | `SSL Labs rating is B (but inconsistent across 2 endpoints)`   |
+| - grade: A<br>- statusMessage: Unable to connect to the server                                       | OK       | `SSL Labs rating is A`                                         |
+| - statusMessage: Unable to connect to the server<br>- statusMessage: Unable to connect to the server | CRITICAL | `SSL Labs rating failed with: Unable to connect to the server` |
+
+
+
+
 * Starting up many probes at __exactly__ the same time will result in API
 throttling. Don't do that.
 * For use as a Nagios plugin, you can set the `tempdir` to something like `/var/cache/nagios3`,
