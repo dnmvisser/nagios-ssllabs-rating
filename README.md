@@ -137,7 +137,7 @@ endpoints _with_ a score. The rationale is that this prevents common connectivit
 problems from polluting the results of this plugin (which is about the score).
 When there are _no_ endpoints at all, this _is_ reported however (as CRITICAL):
 
-| Endpoints                                                                                            | Rating   | Reported result                                                |
+| Endpoints                                                                                            | Reported rating   | Reported result                                                |
 |------------------------------------------------------------------------------------------------------|----------|----------------------------------------------------------------|
 | - grade: A<br>- grade: A                                                                             | OK       | `SSL Labs rating is A`                                         |
 | - grade: A<br>- grade: B                                                                             | WARNING  | `SSL Labs rating is B (but inconsistent across 2 endpoints)`   |
