@@ -105,6 +105,7 @@ try:
     ok_msg = []
     warn_msg = []
     crit_msg = []
+    unknown_msg = []
 
     # Ensure tempdir exists
     from pathlib import Path
@@ -163,10 +164,12 @@ try:
             # Report results
             report(results)
         else:
-            # https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs-v3.md#error-response-status-codes
-            # FIXME This should never happen, but we should be able to handle it
+            # Usually resource issues at the SSL Labs API side.
+            # This happens rarely, but in case it does, they're transient.
+            # We classify them as unknown, which allows us to disable notifications for it,
+            # because they're not a problem with the service being checked.
             debug_info = "\n\nHTTP response headers:\n\n" + yaml.dump(response.headers, default_flow_style=False)
-            crit_msg.append("Received HTTP " + str(response.status_code) + " from SSL Labs API" +
+            unknown_msg.append("The SSL Labs API responded with HTTP " + str(response.status_code) +
                     "\nSee https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs-v3.md#error-response-status-codes" +
                     debug_info)
 
@@ -177,7 +180,9 @@ except Exception as e:
     nagios_exit("UNKNOWN: {0}.".format(e), 3)
 
 # Exit with accumulated message(s)
-if crit_msg:
+if unknown_msg:
+    nagios_exit("UNKNOWN: " + ' '.join(unknown_msg), 3)
+elif crit_msg:
     nagios_exit("CRITICAL: " + ' '.join(crit_msg + warn_msg), 2)
 elif warn_msg:
     nagios_exit("WARNING: " + ' '.join(warn_msg), 1)
