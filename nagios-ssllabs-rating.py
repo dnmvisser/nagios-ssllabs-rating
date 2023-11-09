@@ -12,19 +12,17 @@ import json
 # These can be installed through apt/yum
 import requests
 import yaml
-from packaging import version
-
 
 #from pprint import pprint
 
 
 # TEMP logging...
-import logging
-logging.basicConfig(
-       level=logging.DEBUG,
-       format='%(asctime)s %(message)s',
-       filename='/tmp/ssllabs.log'
-       )
+#  import logging
+#  logging.basicConfig(
+#         level=logging.DEBUG,
+#         format='%(asctime)s %(message)s',
+#         filename='/tmp/ssllabs.log'
+#         )
 
 def nagios_exit(message, code):
     print(message)
@@ -43,8 +41,7 @@ def report(results):
 
             # List of unique grades
             grades = list(set([ sub['grade'] for sub in results['endpoints'] if 'grade' in sub]))
-            grade = sorted(grades, key=lambda x: version.parse(x))[-1]
-
+            grade = sorted(grades)[-1]
             # Endpoint inconsistency message
             if (len(statuses) > 1) or (len(grades) > 1):
                 inconsistency_msg = " (but inconsistent across " + str(len(results['endpoints'])) + " endpoints)"
@@ -53,9 +50,9 @@ def report(results):
 
             msg = "SSLLabs rating is " + grade + inconsistency_msg +  info_line + debug_info
 
-            if version.parse(args.critical) <= version.parse(grade):
+            if args.critical <= grade:
                 crit_msg.append(msg)
-            elif version.parse(args.warning) <= version.parse(grade):
+            elif args.warning <= grade:
                 warn_msg.append(msg)
             else:
                 ok_msg.append(msg)
@@ -101,9 +98,6 @@ try:
             )
 
     args = parser.parse_args()
-
-    from pprint import pprint
-    #  pprint(args)
 
     # start with clean slate
     ok_msg = []
