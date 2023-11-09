@@ -131,8 +131,7 @@ testTime: 1594723519403
 You can also supply an HTTP proxy explicitly:
 
 ```shell
-~$ ./nagios-ssllabs-rating.py --host wiki.geant.org --proxy
-http://localhost:8000
+~$ ./nagios-ssllabs-rating.py --host about.geant.org --proxy http://localhost:8000
 OK: SSLLabs rating is A+
 See https://www.ssllabs.com/ssltest/analyze.html?d=about.geant.org
 
