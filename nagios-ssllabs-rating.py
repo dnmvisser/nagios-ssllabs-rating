@@ -15,14 +15,13 @@ import yaml
 
 #from pprint import pprint
 
-
 # TEMP logging...
-#  import logging
-#  logging.basicConfig(
-#         level=logging.DEBUG,
-#         format='%(asctime)s %(message)s',
-#         filename='/tmp/ssllabs.log'
-#         )
+import logging
+#  logging.basicconfig(
+#      level=logging.debug,
+#      format='%(asctime)s %(message)s',
+#      filename='/tmp/ssllabs.log'
+#      )
 
 def nagios_exit(message, code):
     print(message)
@@ -120,8 +119,8 @@ try:
 
     api = "https://api.ssllabs.com/api/v3/"
     # Fetch API information for this IP address
-    #  api_status = requests.get(api + "info", proxies=proxies)
-    api_status = requests.get(api + "info")
+    api_status = requests.get(api + "info", proxies=proxies)
+    #  api_status = requests.get(api + "info")
     # logging.debug(api_status)
     current_assessments = api_status.json()["currentAssessments"]
     max_assessments = api_status.json()["maxAssessments"]
@@ -151,8 +150,7 @@ try:
 
         # Poll the API
         while True:
-            response = requests.get(api + "analyze?", params=params)
-            #  response = requests.get(api + "analyze?", params=params, proxies=proxies)
+            response = requests.get(api + "analyze?", params=params, proxies=proxies)
             if response.status_code != 200:
                 break
             if response.json()['status'] in ['READY', 'ERROR']:
