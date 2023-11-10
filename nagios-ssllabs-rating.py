@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# These come standard
+# Standard
 import argparse
 import sys
 import os
@@ -9,14 +9,13 @@ import tempfile
 import hashlib
 import json
 
-# These can be installed through apt/yum
+# Install these
 import requests
 import yaml
 
 #from pprint import pprint
-
 # TEMP logging...
-import logging
+# import logging
 #  logging.basicconfig(
 #      level=logging.debug,
 #      format='%(asctime)s %(message)s',
@@ -77,11 +76,11 @@ try:
                 'See https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs-v3.md'
             )
     parser.add_argument('--host',
-            help='The hostname/FQDN to check',
+            help='The hostname of the website to check',
             required=True
             )
     parser.add_argument('--proxy',
-            help='The proxy to use when connecting to the SSLLabs website',
+            help='The proxy to use when connecting to the SSLLabs API',
             )
     parser.add_argument('--warning',
             help='Rating that triggers a WARNING (default: B)',

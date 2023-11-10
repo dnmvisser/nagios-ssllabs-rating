@@ -5,36 +5,52 @@ Nagios/Icinga plugin.
 
 # Installation and requirements
 
-You will need python 3.5 or newer, and the yaml, packaging and requests modules.
+You will need python 3.5 or newer, and the `yaml` and `requests` modules.
 For exmaple through the standard package manager:
 
+```shell
+apt-get install python3 python3-yaml python3-requests
+```
+
+or with a dedicated venv:
+
 ```sh
-   apt-get install python3 python3-yaml python3-requests
+apt-get install python3-venv
+python3 -m venv venv
+. venv/bin/activate
+pip install -U pip wheel
+pip install pyyaml requests
 ```
 
 # Features
 
 * Uses the [SSL Labs v3
   API](https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs-v3.md)
-* Configurable warning/critical thresholds (default B and C)
-* Caches results
+* Configurable warning/critical threshold scores (default: `B/C`)
+* Caching of results
+* Proxy support
 
 # Usage
 
 ```
-usage: nagios-ssllabs-rating.py [-h] --host HOST [--proxy PROXY] [--warning WARNING] [--critical CRITICAL]
+usage: nagios-ssllabs-rating.py [-h] --host HOST [--proxy PROXY]
+                                [--warning WARNING]
+                                [--critical CRITICAL]
                                 [--tempdir TEMPDIR]
 
-Check the rating of an HTTPS web site with the SSLLabs API. See https://github.com/ssllabs/ssllabs-
-scan/blob/master/ssllabs-api-docs-v3.md
+Check the rating of an HTTPS web site with the SSLLabs API. See
+https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-
+docs-v3.md
 
 options:
   -h, --help           show this help message and exit
   --host HOST          The hostname/FQDN to check
-  --proxy PROXY        The proxy to use when connecting to the SSLLabs website
+  --proxy PROXY        The proxy to use when connecting to the SSLLabs
+                       website
   --warning WARNING    Rating that triggers a WARNING (default: B)
   --critical CRITICAL  Rating that triggers a CRITICAL (default: C)
-  --tempdir TEMPDIR    Directory to store cache files (default on this system:
+  --tempdir TEMPDIR    Directory to store cache files (default on this
+                       system:
                        /tmp)
 ```
 
