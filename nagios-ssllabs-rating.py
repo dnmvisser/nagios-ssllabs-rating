@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# These come standard
+# Standard
 import argparse
 import sys
 import os
@@ -9,22 +9,18 @@ import tempfile
 import hashlib
 import json
 
-# These can be installed through apt/yum
+# Install these
 import requests
 import yaml
-from packaging import version
-
 
 #from pprint import pprint
-
-
-# TEMP logging... 
+# TEMP logging...
 # import logging
-# logging.basicConfig(
-#         level=logging.DEBUG,
-#         format='%(asctime)s %(message)s',
-#         filename='/tmp/ssllabs.log'
-#         )
+#  logging.basicconfig(
+#      level=logging.debug,
+#      format='%(asctime)s %(message)s',
+#      filename='/tmp/ssllabs.log'
+#      )
 
 def nagios_exit(message, code):
     print(message)
@@ -43,8 +39,7 @@ def report(results):
 
             # List of unique grades
             grades = list(set([ sub['grade'] for sub in results['endpoints'] if 'grade' in sub]))
-            grade = sorted(grades, key=lambda x: version.parse(x))[-1]
-
+            grade = sorted(grades)[-1]
             # Endpoint inconsistency message
             if (len(statuses) > 1) or (len(grades) > 1):
                 inconsistency_msg = " (but inconsistent across " + str(len(results['endpoints'])) + " endpoints)"
@@ -53,9 +48,9 @@ def report(results):
 
             msg = "SSLLabs rating is " + grade + inconsistency_msg +  info_line + debug_info
 
-            if version.parse(args.critical) <= version.parse(grade):
+            if args.critical <= grade:
                 crit_msg.append(msg)
-            elif version.parse(args.warning) <= version.parse(grade):
+            elif args.warning <= grade:
                 warn_msg.append(msg)
             else:
                 ok_msg.append(msg)
@@ -77,12 +72,15 @@ try:
     tempdir = tempfile.gettempdir()
 
     parser = argparse.ArgumentParser(
-            description='Check the rating of an HTTPS web site with the SSLLabs API. ' + 
+            description='Check the rating of an HTTPS web site with the SSLLabs API. ' +
                 'See https://github.com/ssllabs/ssllabs-scan/blob/master/ssllabs-api-docs-v3.md'
             )
     parser.add_argument('--host',
-            help='The hostname/FQDN to check',
+            help='The hostname of the website to check',
             required=True
+            )
+    parser.add_argument('--proxy',
+            help='The proxy to use when connecting to the SSLLabs API',
             )
     parser.add_argument('--warning',
             help='Rating that triggers a WARNING (default: B)',
@@ -97,9 +95,7 @@ try:
             default=tempdir
             )
 
-   
     args = parser.parse_args()
- 
 
     # start with clean slate
     ok_msg = []
@@ -114,9 +110,16 @@ try:
     # Caching location
     cache_file = args.tempdir + "/ssllabs_check_" + hashlib.sha256(args.host.encode('utf-8')).hexdigest() + ".json"
 
+    # Proxy
+    if 'proxy' in args:
+        proxies = { 'https': args.proxy }
+    else:
+        proxies = None
+
     api = "https://api.ssllabs.com/api/v3/"
     # Fetch API information for this IP address
-    api_status = requests.get(api + "info")
+    api_status = requests.get(api + "info", proxies=proxies)
+    #  api_status = requests.get(api + "info")
     # logging.debug(api_status)
     current_assessments = api_status.json()["currentAssessments"]
     max_assessments = api_status.json()["maxAssessments"]
@@ -146,7 +149,7 @@ try:
 
         # Poll the API
         while True:
-            response = requests.get(api + "analyze?", params=params)
+            response = requests.get(api + "analyze?", params=params, proxies=proxies)
             if response.status_code != 200:
                 break
             if response.json()['status'] in ['READY', 'ERROR']:
@@ -160,7 +163,7 @@ try:
 #                pprint(results)
             # Store results
             with open(cache_file, "w") as fp:
-                json.dump(results, fp)
+                json.dump(results, fp, indent=2)
             # Report results
             report(results)
         else:
